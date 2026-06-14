@@ -203,6 +203,49 @@
             </div>
         </div>
     </template>
+    <!-- Register page -->
+     <template id="template-register">
+    <div class="min-h-screen flex items-center justify-center p-6 bg-slate-50">
+        <div class="w-full max-w-[450px]">
+            <div class="bg-white rounded-3xl shadow-2xl overflow-hidden">
+                <div class="bg-primary p-8 text-center text-white">
+                    <h2 class="text-3xl font-bold">Create Account</h2>
+                </div>
+
+                <form onsubmit="handleAuth(event, 'register')" class="p-8 space-y-4">
+
+                    <input type="text" id="register-name" placeholder="Full Name" required
+                        class="w-full px-4 py-3 border rounded-xl">
+
+                    <input type="email" id="register-email" placeholder="Email" required
+                        class="w-full px-4 py-3 border rounded-xl">
+
+                    <input type="password" id="register-pass" placeholder="Password" required
+                        class="w-full px-4 py-3 border rounded-xl">
+
+                    <select id="register-role" class="w-full px-4 py-3 border rounded-xl">
+                        <option value="student">Student</option>
+                        <option value="staff">Staff</option>
+                        <option value="admin">Admin</option>
+                    </select>
+
+                    <button type="submit"
+                        class="w-full bg-primary text-white py-3 rounded-xl">
+                        Register
+                    </button>
+
+                    <div class="text-center">
+                        <button type="button" onclick="navigateTo('login')"
+                            class="text-primary">
+                            Back to Login
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</template>
 
     <!-- UI Overlay for Toast Notifications -->
     <div id="toast-container" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 pointer-events-none"></div>
@@ -264,10 +307,50 @@
             document.getElementById('login-email').value = emails[role];
             document.getElementById('login-pass').value = 'password';
         }
-
+        
         async function handleAuth(e, type) {
 
     e.preventDefault();
+    if (type === "register") {
+
+    const name = document.getElementById("register-name").value;
+    const email = document.getElementById("register-email").value;
+    const password = document.getElementById("register-pass").value;
+    const role = document.getElementById("register-role").value;
+
+    try {
+
+        const response = await fetch(
+            "https://online-complaint-management-system-qzcf.onrender.com/api/auth/register",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    name,
+                    email,
+                    password,
+                    role
+                })
+            }
+        );
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showToast("Registration Successful");
+            navigateTo("login");
+        } else {
+            showToast(data.message, "error");
+        }
+
+    } catch (error) {
+        console.log(error);
+    }
+
+    return;
+}
 
     const email = document.getElementById("login-email").value;
     const password = document.getElementById("login-pass").value;
