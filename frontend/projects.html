@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UniCare Pro | Advanced Complaint Management System</title>
+    <!-- Fonts & Icons -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1E3A8A',
+                        secondary: '#F3F4F6',
+                        accent: '#10B981',
+                        dark: '#1F2937',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+        .view-section { display: none; }
+        .view-section.active { display: block; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        
+        .nav-link.active {
+            background-color: #1E3A8A;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(30, 58, 138, 0.2);
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-up { animation: slideUp 0.4s ease-out forwards; }
+    </style>
+</head>
+<body class="bg-secondary text-dark font-sans overflow-x-hidden">
+
+    <!-- App Wrapper -->
+    <div id="app" class="min-h-screen flex flex-col">
+        
+        <!-- Navigation Bar (Shared) -->
+        <nav id="main-nav" class="hidden h-16 bg-white border-b border-gray-200 fixed top-0 w-full z-50 px-4 md:px-8 flex items-center justify-between">
+            <div class="flex items-center gap-2 cursor-pointer" onclick="navigateTo('dashboard')">
+                <div class="bg-primary p-1.5 rounded-lg text-white">
+                    <i data-lucide="shield-check" class="w-6 h-6"></i>
+                </div>
+                <span class="text-xl font-bold tracking-tight text-primary">UniCare<span class="text-accent">Pro</span></span>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <div class="hidden md:flex flex-col text-right mr-2">
+                    <span id="user-display-name" class="text-sm font-bold text-gray-800">User Name</span>
+                    <span id="user-display-role" class="text-[10px] uppercase font-bold text-gray-400 tracking-widest leading-none">Role</span>
+                </div>
+                <div class="relative group">
+                    <button class="w-10 h-10 rounded-full bg-gray-200 border-2 border-white shadow-sm flex items-center justify-center overflow-hidden hover:ring-2 hover:ring-primary transition-all">
+                        <i data-lucide="user" class="w-6 h-6 text-gray-500"></i>
+                    </button>
+                    <!-- Dropdown -->
+                    <div class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+                        <button onclick="navigateTo('profile')" class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center gap-2">
+                            <i data-lucide="settings" class="w-4 h-4"></i> Profile Settings
+                        </button>
+                        <hr class="my-1 border-gray-100">
+                        <button onclick="logout()" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
+                            <i data-lucide="log-out" class="w-4 h-4"></i> Sign Out
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Sidebar Layout Container -->
+        <div class="flex flex-1 pt-16" id="dashboard-layout" style="display: none;">
+            <!-- Desktop Sidebar -->
+            <aside class="hidden lg:flex w-64 bg-white border-r border-gray-200 flex-col p-4 fixed h-[calc(100vh-64px)] overflow-y-auto">
+                <div class="space-y-1" id="sidebar-links">
+                    <!-- Links injected by JS based on role -->
+                </div>
+                
+                <div class="mt-auto p-4 bg-primary/5 rounded-2xl border border-primary/10">
+                    <p class="text-xs font-bold text-primary uppercase tracking-widest mb-1">Status</p>
+                    <p class="text-[10px] text-gray-500 leading-tight">System Operational</p>
+                    <div class="flex items-center gap-1.5 mt-2">
+                        <span class="w-2 h-2 bg-accent rounded-full animate-pulse"></span>
+                        <span class="text-[10px] font-medium text-gray-600">All Nodes Active</span>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="flex-1 lg:ml-64 p-4 md:p-8 bg-secondary/50">
+                <div id="view-container" class="max-w-6xl mx-auto">
+                    <!-- Views will be injected here -->
+                </div>
+            </main>
+        </div>
+
+        <!-- Standalone Pages (Landing, Auth) -->
+        <div id="standalone-container" class="flex-1 flex flex-col">
+            <!-- Landing/Auth views injected here -->
+        </div>
+
+    </div>
+
+    <!-- View Templates (Hidden from DOM until needed) -->
+    <template id="template-landing">
+        <section class="min-h-screen flex flex-col">
+            <header class="h-20 flex items-center justify-between px-8 md:px-16 lg:px-24">
+                <div class="flex items-center gap-2">
+                    <div class="bg-primary p-1.5 rounded-lg text-white">
+                        <i data-lucide="shield-check" class="w-6 h-6"></i>
+                    </div>
+                    <span class="text-2xl font-black text-primary">UniCare<span class="text-accent">Pro</span></span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button onclick="navigateTo('login')" class="font-semibold text-gray-600 hover:text-primary px-4">Login</button>
+                    <button onclick="navigateTo('register')" class="bg-primary text-white px-6 py-2.5 rounded-full font-bold shadow-lg shadow-primary/20 hover:scale-105 transition-transform">Register Now</button>
+                </div>
+            </header>
+            
+            <main class="flex-1 flex items-center justify-center px-8 text-center bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-indigo-100 via-transparent to-transparent">
+                <div class="max-w-3xl animate-slide-up">
+                    <span class="bg-accent/10 text-accent text-xs font-bold uppercase tracking-[0.2em] px-4 py-2 rounded-full mb-6 inline-block">Official Organization Portal</span>
+                    <h1 class="text-5xl md:text-7xl font-black text-dark leading-[1.1] mb-8">
+                        Streamline Your <span class="text-primary underline decoration-accent/30">Complaints</span> with Confidence.
+                    </h1>
+                    <p class="text-lg text-gray-500 mb-10 leading-relaxed max-w-2xl mx-auto">
+                        A modern, secure, and transparent management system designed for universities and enterprises to bridge the gap between users and resolution departments.
+                    </p>
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                        <button onclick="navigateTo('register')" class="bg-primary text-white px-8 py-4 rounded-2xl text-lg font-bold shadow-2xl shadow-primary/30 hover:-translate-y-1 transition-all">Get Started Today</button>
+                        <button class="bg-white text-gray-700 border border-gray-200 px-8 py-4 rounded-2xl text-lg font-bold hover:bg-gray-50 transition-all flex items-center justify-center gap-2">
+                            <i data-lucide="play-circle" class="w-5 h-5"></i> Watch Demo
+                        </button>
+                    </div>
+                    
+                    <div class="mt-20 grid grid-cols-2 md:grid-cols-4 gap-8 opacity-50 grayscale hover:grayscale-0 transition-all duration-700">
+                        <div class="flex items-center justify-center font-bold text-gray-400">TRUSTED BY</div>
+                        <div class="flex items-center justify-center font-bold text-gray-400">FORBES 500</div>
+                        <div class="flex items-center justify-center font-bold text-gray-400">IVY LEAGUE</div>
+                        <div class="flex items-center justify-center font-bold text-gray-400">GOVT DEPT</div>
+                    </div>
+                </div>
+            </main>
+        </section>
+    </template>
+
+    <template id="template-login">
+        <div class="min-h-screen flex items-center justify-center p-6 bg-slate-50">
+            <div class="w-full max-w-[450px] animate-slide-up">
+                <div class="bg-white rounded-3xl shadow-2xl shadow-primary/10 overflow-hidden border border-gray-100">
+                    <div class="bg-primary p-8 text-center text-white">
+                        <h2 class="text-3xl font-bold mb-2">Welcome Back</h2>
+                        <p class="text-blue-200 text-sm">Secure access to your management console</p>
+                    </div>
+                    <form onsubmit="handleAuth(event, 'login')" class="p-8 space-y-5">
+                        <div class="space-y-1">
+                            <label class="text-xs font-bold text-gray-500 uppercase">Email Address</label>
+                            <input type="email" id="login-email" required class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all" placeholder="name@organization.edu">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-xs font-bold text-gray-500 uppercase">Password</label>
+                            <input type="password" id="login-pass" required class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all" placeholder="••••••••">
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <label class="flex items-center gap-2 text-gray-600 cursor-pointer">
+                                <input type="checkbox" class="rounded text-primary"> Remember me
+                            </label>
+                            <a href="#" class="text-primary font-bold hover:underline">Forgot password?</a>
+                        </div>
+                        <button type="submit" class="w-full bg-primary text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-primary/20 hover:bg-blue-900 transition-all mt-4">Login to System</button>
+                        
+                        <div class="text-center pt-4">
+                            <p class="text-sm text-gray-500">Don't have an account? <button type="button" onclick="navigateTo('register')" class="text-primary font-bold hover:underline">Register Now</button></p>
+                        </div>
+                    </form>
+                    <div class="bg-gray-50 p-4 border-t border-gray-100 flex justify-center gap-6">
+                        <div class="text-[10px] text-gray-400 font-bold uppercase cursor-pointer hover:text-primary" onclick="quickFill('student')">Student Login</div>
+                        <div class="text-[10px] text-gray-400 font-bold uppercase cursor-pointer hover:text-primary" onclick="quickFill('staff')">Staff Login</div>
+                        <div class="text-[10px] text-gray-400 font-bold uppercase cursor-pointer hover:text-primary" onclick="quickFill('admin')">Admin Login</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- UI Overlay for Toast Notifications -->
+    <div id="toast-container" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 pointer-events-none"></div>
+
+    <script>
+        // --- System State ---
+        const ROLES = { STUDENT: 'student', ADMIN: 'admin', STAFF: 'staff' };
+        
+        const state = {
+            currentUser: null,
+            view: 'landing',
+            complaints: JSON.parse(localStorage.getItem('ocms_complaints')) || [
+                { id: 'OC-1290', title: 'Faulty HVAC in Lecture Hall B', category: 'Infrastructure', status: 'In Progress', priority: 'High', date: '2023-11-20', user: 'Alex Johnson', staff: 'Sarah Eng', desc: 'The heating is not working correctly and temperatures are dropping below 15C.' },
+                { id: 'OC-1291', title: 'Incorrect Grade on Portal', category: 'Academic', status: 'Pending', priority: 'Medium', date: '2023-11-21', user: 'John Doe', staff: null, desc: 'My CS101 grade appears as F but I received an A on my physical transcript.' },
+                { id: 'OC-1292', title: 'WiFi Connectivity Issues - Dorm C', category: 'IT Services', status: 'Resolved', priority: 'Low', date: '2023-11-18', user: 'Emma Watson', staff: 'Mike Tech', desc: 'Connectivity is intermittent after 10PM.' }
+            ],
+            notifications: [
+                { id: 1, title: 'Complaint Resolved', body: 'OC-1292 has been closed by IT Services.', time: '2 hours ago', read: false },
+                { id: 2, title: 'New Message', body: 'Sarah Eng replied to your complaint OC-1290.', time: '5 hours ago', read: false }
+            ]
+        };
+
+        // --- Core Functions ---
+        
+        function init() {
+            lucide.createIcons();
+            renderView();
+        }
+
+        function navigateTo(view) {
+            state.view = view;
+            window.scrollTo(0, 0);
+            renderView();
+        }
+
+        function logout() {
+            state.currentUser = null;
+            state.view = 'landing';
+            showToast('Successfully logged out', 'info');
+            renderView();
+        }
+
+        function showToast(msg, type = 'success') {
+            const colors = {
+                success: 'bg-accent',
+                error: 'bg-red-500',
+                info: 'bg-primary'
+            };
+            const toast = document.createElement('div');
+            toast.className = `${colors[type]} text-white px-6 py-3 rounded-full shadow-2xl font-bold text-sm pointer-events-auto animate-slide-up flex items-center gap-2`;
+            toast.innerHTML = `<i data-lucide="info" class="w-4 h-4"></i> ${msg}`;
+            document.getElementById('toast-container').appendChild(toast);
+            lucide.createIcons();
+            setTimeout(() => toast.remove(), 4000);
+        }
+
+        function quickFill(role) {
+            const emails = { student: 'student@uni.edu', staff: 'staff@dept.edu', admin: 'admin@uni.edu' };
+            document.getElementById('login-email').value = emails[role];
+            document.getElementById('login-pass').value = 'password';
+        }
+
+        async function handleAuth(e, type) {
+
+    e.preventDefault();
+
+    const email = document.getElementById("login-email").value;
+    const password = document.getElementById("login-pass").value;
+
+    try {
+
+        const response = await fetch("http://localhost:5000/api/auth/login", {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+                email,
+                password
+            })
+
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+
+            localStorage.setItem("token", data.token);
+
+            state.currentUser = data.user;
+
+            showToast("Login Successful");
+
+            navigateTo("dashboard");
+
+        } else {
+
+            showToast(data.message, "error");
+
+        }
+
+    } catch (error) {
+
+        console.log(error);
+
+    }
+
+}
+
+        // --- Render Engine ---
+
+        function renderView() {
+            const container = document.getElementById('view-container');
+            const standalone = document.getElementById('standalone-container');
+            const nav = document.getElementById('main-nav');
+            const dashboardLayout = document.getElementById('dashboard-layout');
+            
+            // Clean slate
+            container.innerHTML = '';
+            standalone.innerHTML = '';
+            
+            if (state.view === 'landing' || state.view === 'login' || state.view === 'register') {
+                nav.style.display = 'none';
+                dashboardLayout.style.display = 'none';
+                standalone.style.display = 'flex';
+                const template = document.getElementById(`template-${state.view}`).content.cloneNode(true);
+                standalone.appendChild(template);
+            } else {
+                nav.style.display = 'flex';
+                dashboardLayout.style.display = 'flex';
+                standalone.style.display = 'none';
+                
+                // Update User Details in Nav
+                document.getElementById('user-display-name').innerText = state.currentUser.name;
+                document.getElementById('user-display-role').innerText = state.currentUser.role;
+                
+                renderSidebar();
+                
+                switch(state.view) {
+                    case 'dashboard': renderDashboard(); break;
+                    case 'submit': renderSubmit(); break;
+                    case 'tracking': renderTracking(); break;
+                    case 'admin-analytics': renderAdminAnalytics(); break;
+                    case 'profile': renderProfile(); break;
+                }
+            }
+            lucide.createIcons();
+        }
+
+        function renderSidebar() {
+            const menu = document.getElementById('sidebar-links');
+            menu.innerHTML = '';
+            
+            const links = [
+                { id: 'dashboard', label: 'Overview', icon: 'layout-grid', roles: [ROLES.STUDENT, ROLES.ADMIN, ROLES.STAFF] },
+                { id: 'submit', label: 'New Complaint', icon: 'plus-circle', roles: [ROLES.STUDENT] },
+                { id: 'tracking', label: 'Track Issues', icon: 'list-todo', roles: [ROLES.STUDENT, ROLES.STAFF, ROLES.ADMIN] },
+                { id: 'admin-analytics', label: 'Analytics', icon: 'bar-chart-3', roles: [ROLES.ADMIN] },
+                { id: 'profile', label: 'Profile', icon: 'user-cog', roles: [ROLES.STUDENT, ROLES.ADMIN, ROLES.STAFF] }
+            ];
+
+            links.forEach(link => {
+                if (link.roles.includes(state.currentUser.role)) {
+                    const btn = document.createElement('button');
+                    btn.onclick = () => navigateTo(link.id);
+                    btn.className = `nav-link w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold ${state.view === link.id ? 'active' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}`;
+                    btn.innerHTML = `<i data-lucide="${link.icon}" class="w-5 h-5"></i> <span>${link.label}</span>`;
+                    menu.appendChild(btn);
+                }
+            });
+        }
+
+        function renderDashboard() {
+            const container = document.getElementById('view-container');
+            
+            const stats = [
+                { label: 'Total Tickets', val: state.complaints.length, icon: 'clipboard-list', col: 'bg-blue-500' },
+                { label: 'Pending', val: state.complaints.filter(c => c.status === 'Pending').length, icon: 'clock', col: 'bg-amber-500' },
+                { label: 'In Progress', val: state.complaints.filter(c => c.status === 'In Progress').length, icon: 'refresh-cw', col: 'bg-indigo-500' },
+                { label: 'Resolved', val: state.complaints.filter(c => c.status === 'Resolved').length, icon: 'check-circle-2', col: 'bg-accent' },
+            ];
+
+            let html = `
+                <div class="animate-slide-up">
+                    <div class="mb-8">
+                        <h1 class="text-3xl font-black text-dark">Console Overview</h1>
+                        <p class="text-gray-500">Real-time activity and health metrics</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                        ${stats.map(s => `
+                            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
+                                <div>
+                                    <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">${s.label}</p>
+                                    <h3 class="text-3xl font-black mt-1">${s.val}</h3>
+                                </div>
+                                <div class="${s.col} p-3 rounded-xl text-white shadow-lg">
+                                    <i data-lucide="${s.icon}" class="w-6 h-6"></i>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div class="lg:col-span-2 space-y-4">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-xl font-bold">Recent Activity</h3>
+                                <button onclick="navigateTo('tracking')" class="text-primary text-sm font-bold hover:underline">View All</button>
+                            </div>
+                            <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+                                <table class="w-full text-left">
+                                    <thead class="bg-gray-50 border-b border-gray-100">
+                                        <tr>
+                                            <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase">ID</th>
+                                            <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase">Issue</th>
+                                            <th class="px-6 py-4 text-xs font-bold text-gray-400 uppercase">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-100">
+                                        ${state.complaints.slice(0, 4).map(c => `
+                                            <tr class="hover:bg-gray-50 transition-colors cursor-pointer">
+                                                <td class="px-6 py-4 text-sm font-bold text-primary">${c.id}</td>
+                                                <td class="px-6 py-4 text-sm font-medium text-gray-800">${c.title}</td>
+                                                <td class="px-6 py-4">
+                                                    <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase ${c.status === 'Resolved' ? 'bg-accent/10 text-accent' : 'bg-amber-100 text-amber-700'}">${c.status}</span>
+                                                </td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <h3 class="text-xl font-bold">Notifications</h3>
+                            <div class="space-y-3">
+                                ${state.notifications.map(n => `
+                                    <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex gap-3">
+                                        <div class="bg-blue-50 p-2 rounded-lg text-primary h-fit">
+                                            <i data-lucide="bell" class="w-4 h-4"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="text-sm font-bold text-gray-800">${n.title}</h4>
+                                            <p class="text-xs text-gray-500 mt-0.5">${n.body}</p>
+                                            <span class="text-[10px] text-gray-400 mt-2 block">${n.time}</span>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.innerHTML = html;
+        }
+
+        function renderSubmit() {
+            const container = document.getElementById('view-container');
+            container.innerHTML = `
+                <div class="max-w-3xl mx-auto animate-slide-up">
+                    <div class="mb-8">
+                        <h1 class="text-3xl font-black text-dark">Submit Complaint</h1>
+                        <p class="text-gray-500">Your concerns will be routed to the appropriate department.</p>
+                    </div>
+
+                    <form onsubmit="handleComplaintSubmit(event)" class="bg-white p-8 rounded-3xl shadow-xl border border-gray-100 space-y-6">
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-gray-400 uppercase tracking-widest">Issue Subject</label>
+                            <input type="text" id="comp-title" required class="w-full px-5 py-4 rounded-2xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-4 focus:ring-primary/5 focus:bg-white transition-all text-lg font-medium" placeholder="Concise title of the issue">
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold text-gray-400 uppercase tracking-widest">Category</label>
+                                <select id="comp-category" class="w-full px-5 py-4 rounded-2xl bg-gray-50 border border-gray-200 focus:outline-none focus:bg-white transition-all font-medium appearance-none">
+                                    <option>Academic</option>
+                                    <option>Administrative</option>
+                                    <option>IT Services</option>
+                                    <option>Infrastructure</option>
+                                    <option>Security</option>
+                                </select>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold text-gray-400 uppercase tracking-widest">Priority</label>
+                                <select id="comp-priority" class="w-full px-5 py-4 rounded-2xl bg-gray-50 border border-gray-200 focus:outline-none focus:bg-white transition-all font-medium appearance-none">
+                                    <option>Low</option>
+                                    <option selected>Medium</option>
+                                    <option>High</option>
+                                    <option>Critical</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-gray-400 uppercase tracking-widest">Detailed Description</label>
+                            <textarea id="comp-desc" rows="6" required class="w-full px-5 py-4 rounded-2xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-4 focus:ring-primary/5 focus:bg-white transition-all font-medium" placeholder="Please explain the situation in detail..."></textarea>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-gray-400 uppercase tracking-widest">Attachment (Optional)</label>
+                            <div class="border-2 border-dashed border-gray-200 rounded-2xl p-8 text-center hover:border-primary/30 transition-all cursor-pointer bg-gray-50/50">
+                                <i data-lucide="image-plus" class="w-10 h-10 text-gray-300 mx-auto mb-2"></i>
+                                <p class="text-sm font-bold text-gray-400">Drag & Drop or <span class="text-primary">Click to Upload</span></p>
+                                <p class="text-[10px] text-gray-400 mt-1 uppercase">Max size: 5MB (JPG, PNG, PDF)</p>
+                            </div>
+                        </div>
+
+                        <div class="pt-6">
+                            <button type="submit" class="w-full bg-primary text-white py-5 rounded-2xl font-bold text-xl shadow-2xl shadow-primary/30 hover:bg-blue-900 transition-all flex items-center justify-center gap-3">
+                                <i data-lucide="send" class="w-6 h-6"></i> Submit to System
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        async function handleComplaintSubmit(e) {
+
+    e.preventDefault();
+
+    const title = document.getElementById("comp-title").value;
+    const category = document.getElementById("comp-category").value;
+    const priority = document.getElementById("comp-priority").value;
+    const description = document.getElementById("comp-desc").value;
+
+    try {
+
+        const response = await fetch("http://localhost:5000/api/complaints", {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+                title,
+                category,
+                priority,
+                description
+            })
+
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+
+            showToast("Complaint Submitted Successfully");
+
+            navigateTo("tracking");
+
+        } else {
+
+            showToast(data.message, "error");
+
+        }
+
+    } catch (error) {
+
+        console.log(error);
+
+    }
+
+}
+
+       async function renderTracking() {
+    const container = document.getElementById('view-container');
+
+    try {
+        const response = await fetch("http://localhost:5000/api/complaints");
+        
+        // 1. Data ko local variable me fetch kiya
+        const complaints = await response.json(); 
+
+        const isAdminOrStaff = [ROLES.ADMIN, ROLES.STAFF].includes(state.currentUser.role);
+
+        container.innerHTML = `
+            <div class="animate-slide-up">
+                <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+                    <div>
+                        <h1 class="text-3xl font-black text-dark">Complaint Tracker</h1>
+                        <p class="text-gray-500">Monitoring and managing active resolution flows</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <div class="relative">
+                            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+                            <input type="text" placeholder="Search ID or Title..." class="pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:outline-none text-sm w-64">
+                        </div>
+                        <button class="bg-white border border-gray-200 p-2 rounded-xl hover:bg-gray-50">
+                            <i data-lucide="filter" class="w-5 h-5 text-gray-500"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+                    <table class="w-full text-left">
+                        <thead class="bg-gray-50 border-b border-gray-100">
+                            <tr>
+                                <th class="px-6 py-5 text-xs font-bold text-gray-400 uppercase tracking-widest">ID</th>
+                                <th class="px-6 py-5 text-xs font-bold text-gray-400 uppercase tracking-widest">Issue</th>
+                                <th class="px-6 py-5 text-xs font-bold text-gray-400 uppercase tracking-widest">Priority</th>
+                                <th class="px-6 py-5 text-xs font-bold text-gray-400 uppercase tracking-widest">Status</th>
+                                <th class="px-6 py-5 text-xs font-bold text-gray-400 uppercase tracking-widest">Date</th>
+                                <th class="px-6 py-5 text-xs font-bold text-gray-400 uppercase tracking-widest text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                           
+                            ${complaints.map(c => `
+                                <tr class="hover:bg-gray-50/80 transition-all group">
+                                    <td class="px-6 py-5">
+                                        <span class="text-sm font-bold text-primary bg-primary/5 px-2 py-1 rounded-md">${c.id}</span>
+                                    </td>
+                                    <td class="px-6 py-5">
+                                        <div class="flex flex-col">
+                                            <span class="text-sm font-bold text-gray-800">${c.title}</span>
+                                            <span class="text-[10px] text-gray-400 uppercase font-bold tracking-tighter">${c.category}</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-5">
+                                        <span class="text-[10px] font-black uppercase px-2 py-0.5 rounded border ${c.priority === 'High' ? 'border-red-200 text-red-500 bg-red-50' : 'border-gray-200 text-gray-500 bg-gray-50'}">${c.priority}</span>
+                                    </td>
+                                    <td class="px-6 py-5">
+                                        <span class="flex items-center gap-1.5 text-xs font-bold ${c.status === 'Resolved' ? 'text-accent' : (c.status === 'Pending' ? 'text-amber-500' : 'text-primary')}">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
+                                            ${c.status}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-5 text-xs text-gray-500 font-medium">${c.date}</td>
+                                    <td class="px-6 py-5">
+                                        <div class="flex justify-center gap-2">
+                                            <button class="p-2 hover:bg-blue-50 rounded-lg text-primary transition-all" title="View Details">
+                                                <i data-lucide="eye" class="w-4 h-4"></i>
+                                            </button>
+                                            ${isAdminOrStaff ? `
+                                                <button onclick="updateStatus('${c.id}')" class="p-2 hover:bg-accent/10 rounded-lg text-accent transition-all" title="Manage Status">
+                                                    <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                                </button>
+                                            ` : ''}
+                                        </div>
+                                        <button onclick="deleteComplaint('${c._id}')" class="p-2 hover:bg-red-50 rounded-lg text-red-500 transition-all" title="Delete">
+    <i data-lucide="trash-2" class="w-4 h-4"></i>
+</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+        
+        // Lucide icons initialize karein render karne ke baad
+        lucide.createIcons();
+
+    } catch (error) {
+        // 3. FIXED: Try-catch block syntax properly close kiya
+        console.error("Failed to render complaints tracker:", error);
+        container.innerHTML = `<p class="text-red-500 p-4">Failed to load data. Please try again later.</p>`;
+    }
+}
+    
+   async function updateStatus(id) {
+
+    const status = prompt(
+        "Enter Status: Pending, In Progress, Resolved"
+    );
+
+    if (!status) return;
+
+    try {
+
+        await fetch(`http://localhost:5000/api/complaints/${id}`, {
+
+            method: "PUT",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+                status
+            })
+
+        });
+
+        showToast("Status Updated Successfully");
+
+        renderTracking();
+
+    } catch (error) {
+
+        console.log(error);
+
+    }
+
+}
+
+        function renderAdminAnalytics() {
+            const container = document.getElementById('view-container');
+            container.innerHTML = `
+                <div class="animate-slide-up">
+                    <div class="mb-8">
+                        <h1 class="text-3xl font-black text-dark">System Analytics</h1>
+                        <p class="text-gray-500">Strategic data breakdown and performance KPIs</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+                            <h3 class="text-xl font-bold mb-6">Resolution Time Distribution</h3>
+                            <div class="h-64 flex items-end justify-around gap-4 pt-10 px-4">
+                                <div class="w-full bg-gray-50 rounded-t-xl relative group">
+                                    <div class="absolute bottom-0 w-full bg-primary rounded-t-xl h-4/5 group-hover:bg-blue-600 transition-all"></div>
+                                    <span class="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-bold text-gray-400">IT</span>
+                                </div>
+                                <div class="w-full bg-gray-50 rounded-t-xl relative group">
+                                    <div class="absolute bottom-0 w-full bg-accent rounded-t-xl h-2/3 group-hover:bg-green-600 transition-all"></div>
+                                    <span class="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-bold text-gray-400">Admin</span>
+                                </div>
+                                <div class="w-full bg-gray-50 rounded-t-xl relative group">
+                                    <div class="absolute bottom-0 w-full bg-indigo-500 rounded-t-xl h-1/2 group-hover:bg-indigo-600 transition-all"></div>
+                                    <span class="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-bold text-gray-400">Acad</span>
+                                </div>
+                                <div class="w-full bg-gray-50 rounded-t-xl relative group">
+                                    <div class="absolute bottom-0 w-full bg-red-400 rounded-t-xl h-1/3 group-hover:bg-red-500 transition-all"></div>
+                                    <span class="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-bold text-gray-400">Sec</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+                            <h3 class="text-xl font-bold mb-6">Complaint Volume (Last 6 Months)</h3>
+                            <div class="space-y-6">
+                                ${['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'].map((m, i) => `
+                                    <div class="flex items-center gap-4">
+                                        <span class="text-xs font-bold text-gray-400 w-8 uppercase">${m}</span>
+                                        <div class="flex-1 h-3 bg-gray-50 rounded-full overflow-hidden">
+                                            <div class="h-full bg-primary" style="width: ${30 + (i * 12)}%"></div>
+                                        </div>
+                                        <span class="text-xs font-black text-gray-700">${120 + (i * 45)}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderProfile() {
+            const container = document.getElementById('view-container');
+            container.innerHTML = `
+                <div class="max-w-2xl mx-auto animate-slide-up">
+                    <div class="mb-8">
+                        <h1 class="text-3xl font-black text-dark">Profile Settings</h1>
+                        <p class="text-gray-500">Manage your identity and notification preferences</p>
+                    </div>
+
+                    <div class="bg-white rounded-3xl shadow-xl border border-gray-100 p-8 space-y-8">
+                        <div class="flex items-center gap-6 pb-8 border-b border-gray-100">
+                            <div class="w-24 h-24 rounded-3xl bg-primary/10 flex items-center justify-center relative overflow-hidden group cursor-pointer">
+                                <i data-lucide="user" class="w-12 h-12 text-primary"></i>
+                                <div class="absolute inset-0 bg-primary/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
+                                    <i data-lucide="camera" class="text-white w-6 h-6"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <h3 class="text-2xl font-black text-dark">${state.currentUser.name}</h3>
+                                <p class="text-gray-500 uppercase text-xs font-black tracking-widest">${state.currentUser.role} Account</p>
+                                <button class="mt-3 text-primary text-sm font-bold hover:underline">Change Avatar</button>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <h4 class="text-xs font-black text-gray-400 uppercase tracking-widest">Personal Details</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="space-y-1">
+                                    <label class="text-xs font-bold text-gray-500">Full Name</label>
+                                    <input type="text" id="profile-name" value="${state.currentUser.name}" class="w-full px-4 py-2 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-xs font-bold text-gray-500">Email Address</label>
+                                    <input type="email" value="${state.currentUser.email}" readonly class="w-full px-4 py-2 rounded-xl bg-gray-50 border border-gray-200 text-gray-400 cursor-not-allowed">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pt-4 flex gap-4">
+                            <button onclick="updateProfile()" class="bg-primary text-white px-8 py-3 rounded-2xl font-bold shadow-lg shadow-primary/20 hover:bg-blue-900 transition-all">
+    Save Changes
+</button>
+                            <button class="bg-gray-50 text-gray-600 px-8 py-3 rounded-2xl font-bold hover:bg-gray-100 transition-all">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        // Initialize Application
+        window.onload = init;
+        async function deleteComplaint(id) {
+
+    try {
+
+        await fetch(`http://localhost:5000/api/complaints/${id}`, {
+
+            method: "DELETE"
+
+        });
+
+        showToast("Complaint Deleted Successfully");
+
+        renderTracking();
+
+    } catch (error) {
+
+        console.log(error);
+
+    }
+
+}
+
+    </script>
+</body>
+</html>
